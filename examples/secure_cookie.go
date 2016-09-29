@@ -24,12 +24,12 @@ var form = `
 `
 
 func index(ctx *web.Context) string {
-	cookie, _ := ctx.Request.Cookie(cookieName)
+	cookie, ok := ctx.GetSecureCookie(cookieName)
 	var top string
-	if cookie == nil {
+	if !ok {
 		top = fmt.Sprintf(notice, "The cookie has not been set")
 	} else {
-		var val = html.EscapeString(cookie.Value)
+		var val = html.EscapeString(cookie)
 		top = fmt.Sprintf(notice, "The value of the cookie is '"+val+"'.")
 	}
 	return top + form
@@ -39,12 +39,13 @@ func update(ctx *web.Context) {
 	if ctx.Params["submit"] == "Delete" {
 		ctx.SetCookie(web.NewCookie(cookieName, "", -1))
 	} else {
-		ctx.SetCookie(web.NewCookie(cookieName, ctx.Params["cookie"], 0))
+		ctx.SetSecureCookie(cookieName, ctx.Params["cookie"], 0)
 	}
 	ctx.Redirect(301, "/")
 }
 
 func main() {
+	web.Config.CookieSecret = "a long secure cookie secret"
 	web.Get("/", index)
 	web.Post("/update", update)
 	web.Run("0.0.0.0:9999")
